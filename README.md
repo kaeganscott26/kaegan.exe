@@ -13,6 +13,8 @@ This file is the root index for the Kaegan.exe project.
 ## House Documents
 
 - [[docs/house/Bad_Dream_Mommy_Behavior|Bad Dream Mommy Doorway Behavior]]
+- [[docs/house/NIGHTMARE_RULES|Nightmare Rules]]
+- [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
 
 ## Current Build Goal
 
@@ -40,7 +42,3 @@ Unreal Engine 5
 - `exports/` - packaged builds and testing exports
 - `installer/` - final installer package and download-ready release files
 
-## House Documents
-
-- [[docs/house/Bad_Dream_Mommy_Behavior|Bad Dream Mommy Doorway Behavior]]
-- [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
