@@ -39,3 +39,8 @@ Unreal Engine 5
 - `unreal/` - Unreal project files
 - `exports/` - packaged builds and testing exports
 - `installer/` - final installer package and download-ready release files
+
+## House Documents
+
+- [[docs/house/Bad_Dream_Mommy_Behavior|Bad Dream Mommy Doorway Behavior]]
+- [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
