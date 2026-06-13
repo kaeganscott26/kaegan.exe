@@ -1,0 +1,28 @@
+# Unreal generated folders
+**/Binaries/
+**/DerivedDataCache/
+**/Intermediate/
+**/Saved/
+**/.vs/
+
+# IDE / editor junk
+.vs/
+.idea/
+*.sln
+*.vc.db
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+Build/
+dist/
+exports/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
