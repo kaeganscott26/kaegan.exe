@@ -1,46 +1,37 @@
-\# kaegan.exe
-[[GAME_GOAL.md]]
-
-
+# kaegan.exe
 
 A first-person psychological horror game built as a personal birthday project/present for my son, Kaegan.
 
+## Project Root
 
+This file is the root index for the Kaegan.exe project.
 
-\##Current Build Goal
+## Core Documents
 
+- [[docs/GAME_GOAL|Game Goal]]
 
+## Current Build Goal
 
-Create a small playable prototype:
+Create the first playable nightmare loop:
 
-* first person movement 
-* one blocked-out room
-* one hallway
-* one interactable door
-* one drawing/note pickup
-* one sound-triggered horror event
+- first-person movement
+- one blocked-out bedroom
+- one long hallway
+- one interactable door
+- one drawing or note pickup
+- one sound-triggered horror event
+- one impossible route change
 
-
-
-
-
-\## Engine
-
-
+## Engine
 
 Unreal Engine 5
 
+## Project Layout
 
-
-\## Project Layout
-
-
-
-* 'docs/' - design notes and development documentation
-* 'planning/' - task lists and build plans
-* 'references/' - visual, story, and house references 
-* 'assets/' - external source assets before import (pictures, floor-plans, sound-recordings, etc)
-* 'unreal/' -  unreal project files
-* 'exports/' - packaged builds and testing exports will be here
-* 'installer/' - final installer packaged and downloaded from here
-
+- `docs/` - design notes and development documentation
+- `planning/` - task lists and build plans
+- `references/` - visual, story, and house references
+- `assets/` - external source assets before import, such as pictures, floor plans, sound recordings, etc.
+- `unreal/` - Unreal project files
+- `exports/` - packaged builds and testing exports
+- `installer/` - final installer package and download-ready release files
