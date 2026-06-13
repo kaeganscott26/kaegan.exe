@@ -1,3 +1,4 @@
+
 # Game Goal
 
 ##Purpose
@@ -202,8 +203,76 @@ This should begin through sound and feeling bbefore it becomes visual.
 
 The Dad_Mimic should courrupt the idea of safety.
 
-Dad's room should feel like the place Kaean wants to reach 
+Dad's room should feel like the place Kaean wants to reach, but the house should make that path unstable.
 
+The Dad Mimic should not be overused early.
+
+It should be treated as an escalation layer after the player already understands the house and Bad Dream Mommy Behavior.
+
+The Dad Mimic begins after the false waking loop and manifests itself as only sounds of the house...crutches, prosthetic leg clicks and clunks from walking with weight and with patience..the crutches clink in a specific rythom that is natural at first but changes to unnatural rythm and lengths.
+
+The Dad Mimic is never physically revealed until the very end as a final jump scare after Kaegan reaches the final note.
+
+After final jump scare, the player awakes in his bed and its day time then the game ends..
+
+# Gameplay Pillars
+
+The game is built around these pillars:
+
+- first-person exploration
+- movement restriction
+- house-triggered events
+- notes and drawing as progression keys
+- sound-based horror
+- impossible hallway behavior
+- doorway scares
+- false waking
+- enviornmental storytelling
+- no combat
+- no traditional moster attack loop
+
+# First Build Target
+
+The first playable build should prove the opening nightmare loop.
+
+The player should be able to:
+
+- wake up in bed
+- look around while movement is locked
+- hear the dishes crash
+- see the door-face event 
+- regain movement 
+- collect the first drawing
+- open the bedroom door
+- enter the long hallway
+- reach the turn-around note 
+- reutrn to the bedroom see the bedroom door slam shut
+- be forced into the rest of the house
+
+# NOT REQUIRED YET
+
+The first build doen not need:
+
+- final character models
+- final house art
+- full monster AI
+- COMBAT (NEVER COMBAT)
+- INVENTORY SYSTEM (Only to read/collect each drawing/notes)
+- Save system (You cannot die in the game so no need to save)
+- Full voice acting....(The house is the voice)
+- final cutscenes
+- polished animations
+- complete house layout (complete house layout will be provided in "C:\Users\North\Documents\Projects\kaegan.exe\references")
+
+The first build only needs to prove the nightmare logic.
+
+# Guiding Statement 
+
+Kaegan.exe should feel like a childhood nightmare remembered too clearly.
+
+The house should not explain itself. The notes / drawings tell the story and give the player context. Added with the house's response to event triggers it should naturally evolve without being confusing.
+
+The player should learn through fear, repetition, sound, and the terrible feeling of dread. The feeling that the safest path has been taken away.
 
 
 

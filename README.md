@@ -1,4 +1,5 @@
 \# kaegan.exe
+[[GAME_GOAL.md]]
 
 
 
