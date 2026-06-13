@@ -26,3 +26,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Obsidian local workspace state
+.obsidian/workspace.json
