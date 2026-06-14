@@ -16,6 +16,11 @@ This file is the root index for the Kaegan.exe project.
 - [[docs/house/NIGHTMARE_RULES|Nightmare Rules]]
 - [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
 - [[docs/house/HOUSE_BEHAVIOR_RULES|House Behavior Rules]]
+
+## Entity Documents
+
+- [[docs/entities/DAD_MIMIC|Dad Mimic]]
+
 ## Current Build Goal
 
 Create the first playable nightmare loop:
@@ -41,7 +46,3 @@ Unreal Engine 5
 - `unreal/` - Unreal project files
 - `exports/` - packaged builds and testing exports
 - `installer/` - final installer package and download-ready release files
-
-## Entity Documents
-
-- [[docs/entities/DAD_MIMIC|Dad Mimic]]
