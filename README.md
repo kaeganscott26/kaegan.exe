@@ -51,3 +51,7 @@ Unreal Engine 5
 - `unreal/` - Unreal project files
 - `exports/` - packaged builds and testing exports
 - `installer/` - final installer package and download-ready release files
+
+## Build Documents
+
+- [[docs/build/FIRST_PLAYABLE_BUILD_CHECKLIST|First Playable Build Checklist]]
