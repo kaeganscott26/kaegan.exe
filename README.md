@@ -16,10 +16,15 @@ This file is the root index for the Kaegan.exe project.
 - [[docs/house/NIGHTMARE_RULES|Nightmare Rules]]
 - [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
 - [[docs/house/HOUSE_BEHAVIOR_RULES|House Behavior Rules]]
+- [[docs/house/HOUSE_LAYOUT_MEMORY_MAP|House Layout Memory Map]]
 
 ## Entity Documents
 
 - [[docs/entities/DAD_MIMIC|Dad Mimic]]
+
+## Reference Files
+
+- [[references/House Layout/kaegan_house_memory_floorplan.png|House Memory Floor Plan]]
 
 ## Current Build Goal
 
