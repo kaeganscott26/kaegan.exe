@@ -14,7 +14,7 @@ Bad Dream Mommy is most frightening when she exists at the boundary between room
 
 She should not behave like a creature that simply walks into the room and attacks.
 
-Her fear comes from stillness, partial visibility, jerky motion, threshold pressure, and the feeling that she can get closer without fully entering.
+Her fear radiates from stillness, partial visibility, jerky motion, threshold pressure, and the feeling that she is getting closer without fully entering the room.
 
 ## Core Rule
 
@@ -24,33 +24,29 @@ The doorway is her weapon.
 
 The player should feel like the room is being invaded even when she never fully crosses the threshold.
 
-## In-Game Naming Rule
-
-Bad Dream Mommy must never be directly named inside the game.
-
-The name belongs in development documentation only.
-
-Inside the game, she should be treated as a presence, a doorway event, and a nightmare behavior.
-
-The player should understand her through fear, pattern, sound, and repeated encounters instead of through a label.
-
 ## Doorway Presence
 
-When Bad Dream Mommy appears in an open doorway, she should begin at the edge of the frame.
+When Bad Dream Mommy appears in an open doorway, she should begin at the edge of the doorframe.
 
 She should not start centered in the doorway.
 
-At first, the player should only see part of her silhouette.
+Sometimes she only shows her face by poking her neck through with jerking, twitching motions.
 
-The player should feel uncertain about what they are looking at.
+Sometimes she reaches an arm or leg unnaturally through the doorway and up the wall, almost as if she is trying to climb the doorway.
 
-The shape should read as human enough to be recognized, but wrong enough to be disturbing.
+Sometimes she appears through the door itself. Sometimes only her face appears. Other times, a random leg or foot may show through the door along with the face, twisted and unnatural.
+
+Sometimes the player only sees a silhouette.
+
+The player should feel uncertain about what they are looking at, only knowing that it radiates fear and evil.
+
+The shape should read as human enough to be recognized, but disturbingly twisted and malformed, almost like the house memorized the shape but did not know the meaning of the body parts.
 
 ## Stillness
 
 Stillness is required.
 
-Before she moves, she should hold completely still.
+Before Bad Dream Mommy moves, she should hold completely still.
 
 The stillness should last long enough for the player to notice her.
 
@@ -59,6 +55,12 @@ The player should have a moment to think:
 What is that?
 
 Then the fear should build from the fact that she is not moving normally.
+
+The stillness should feel intentional.
+
+She is not frozen because she is inactive.
+
+She is still because she is watching.
 
 ## Leaning Motion
 
@@ -83,6 +85,10 @@ The movement rhythm should feel like:
 The pauses are as important as the motion.
 
 Each lean should make her feel closer without making her fully enter the room.
+
+She should feel like she is testing the threshold.
+
+She should feel like she is waiting for the room to let her in.
 
 ## Threshold Rule
 
@@ -137,6 +143,8 @@ Important traits:
 - movement feels too sudden
 - body does not enter the room normally
 - she appears to lean closer without walking
+- limbs may appear where they should not be
+- the body may feel assembled incorrectly by the house
 
 ## Face Behavior
 
