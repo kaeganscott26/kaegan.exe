@@ -42,3 +42,6 @@ Unreal Engine 5
 - `exports/` - packaged builds and testing exports
 - `installer/` - final installer package and download-ready release files
 
+## Entity Documents
+
+- [[docs/entities/DAD_MIMIC|Dad Mimic]]
