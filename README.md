@@ -15,7 +15,7 @@ This file is the root index for the Kaegan.exe project.
 - [[docs/house/Bad_Dream_Mommy_Behavior|Bad Dream Mommy Doorway Behavior]]
 - [[docs/house/NIGHTMARE_RULES|Nightmare Rules]]
 - [[docs/house/OPENING_SEQUENCE|Opening Sequence]]
-
+- [[docs/house/HOUSE_BEHAVIOR_RULES|House Behavior Rules]]
 ## Current Build Goal
 
 Create the first playable nightmare loop:
