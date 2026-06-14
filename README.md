@@ -10,6 +10,10 @@ This file is the root index for the Kaegan.exe project.
 
 - [[docs/GAME_GOAL|Game Goal]]
 
+## Script Documents
+
+- [[docs/script/OPENING_SEQUENCE_TIMING_SCRIPT|Opening Sequence Timing Script]]
+
 ## House Documents
 
 - [[docs/house/Bad_Dream_Mommy_Behavior|Bad Dream Mommy Doorway Behavior]]
