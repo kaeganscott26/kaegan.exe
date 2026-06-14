@@ -34,3 +34,7 @@
 
 18\. Open alternate path
 
+
+[[GAME_GOAL]]
+[[README]]
+
