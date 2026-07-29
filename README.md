@@ -32,15 +32,16 @@ This file is the root index for the Kaegan.exe project.
 
 ## Current Build Goal
 
-Create the first playable nightmare loop:
+LEVEL 01 HOME is implemented as a runtime-built Unreal vertical slice. See [FIRST_LEVEL_IMPLEMENTATION.md](FIRST_LEVEL_IMPLEMENTATION.md) for the exact map, controls, build status, temporary assets, and launch instructions.
+
+The UE 5.7 editor target, command-line map load, automated runtime progression, and editor map launch were verified on 2026-07-29. A final human visual/audio playthrough is still recommended for the prototype placeholder presentation.
+
+The current playable route includes:
 
 - first-person movement
-- one blocked-out bedroom
-- one long hallway
-- one interactable door
-- one drawing or note pickup
-- one sound-triggered horror event
-- one impossible route change
+- a runtime-blocked memory house with living room, kitchen, hallway, bathroom, and bedrooms
+- reusable interaction and hinged-door systems
+- an inspectable childhood drawing, corruption pass, doorway reveal, father silhouette/crutches, and controlled ending
 
 ## Engine
 
