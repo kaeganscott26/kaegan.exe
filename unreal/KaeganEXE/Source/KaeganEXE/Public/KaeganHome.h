@@ -19,6 +19,9 @@ class UPointLightComponent;
 class USceneComponent;
 class AStaticMeshActor;
 class APointLight;
+class ASkyLight;
+class ADirectionalLight;
+class APostProcessVolume;
 
 UENUM(BlueprintType)
 enum class EKaeganLevelState : uint8
@@ -194,12 +197,15 @@ protected:
     void UpdateProgression();
     void SpawnFootstepHint();
     void RunAutomatedValidation();
+    void ConfigureVisibilityPass();
+    void LogVisibilityValidation(const TCHAR* Phase) const;
+    void RequestValidationScreenshot(const FString& Name) const;
     void ValidateMemoryInteraction();
     void ValidateHallwayCorruption();
     void ValidateEnding();
     void ValidateCompletion();
     AStaticMeshActor* MakeBox(const FVector& Location, const FVector& Dimensions, const FLinearColor& Color, const FString& Label, bool bCollision = true);
-    APointLight* MakeLight(const FVector& Location, const FLinearColor& Color, float Intensity, float Radius, const FString& Label);
+    APointLight* MakeLight(const FVector& Location, const FLinearColor& Color, float Intensity, float Radius, const FString& Label, bool bCastShadows = true);
     AKaeganDoorActor* MakeDoor(const FVector& Location, float Yaw, const FString& Label, bool bLocked = false);
     AKaeganFirstPersonCharacter* GetKaegan() const;
 private:
@@ -212,10 +218,15 @@ private:
     UPROPERTY() TObjectPtr<AKaeganFatherMimic> Mimic;
     UPROPERTY() TArray<TObjectPtr<APointLight>> HouseLights;
     UPROPERTY() TArray<TObjectPtr<AActor>> CorruptionProps;
+    UPROPERTY() TObjectPtr<ASkyLight> AmbientSkyLight;
+    UPROPERTY() TObjectPtr<ADirectionalLight> Moonlight;
+    UPROPERTY() TObjectPtr<APostProcessVolume> VisibilityPostProcess;
     FTimerHandle BootTimer;
     FTimerHandle ProgressTimer;
     FTimerHandle FootstepTimer;
     FTimerHandle ValidationTimer;
+    FTimerHandle StartingScreenshotTimer;
+    FTimerHandle HallwayScreenshotTimer;
 };
 
 UCLASS()

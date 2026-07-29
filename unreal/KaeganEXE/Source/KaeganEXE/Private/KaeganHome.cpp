@@ -7,7 +7,9 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/TextBlock.h"
@@ -15,11 +17,15 @@
 #include "Components/VerticalBoxSlot.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/PointLight.h"
+#include "Engine/DirectionalLight.h"
 #include "Engine/Engine.h"
+#include "Engine/PostProcessVolume.h"
+#include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "UnrealClient.h"
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogKaeganHome, Log, All);
@@ -44,7 +50,9 @@ namespace KaeganHome
             if (UMaterialInstanceDynamic* Dynamic = Component->CreateDynamicMaterialInstance(0, Material))
             {
                 Dynamic->SetVectorParameterValue(TEXT("Color"), Color);
-                Dynamic->SetVectorParameterValue(TEXT("BaseColor"), Color);
+                // BasicShapeMaterial exposes Color. Explicitly reassign the MID so runtime geometry
+                // never falls back to the source material when the component is rebuilt.
+                Component->SetMaterial(0, Dynamic);
             }
         }
     }
@@ -250,7 +258,7 @@ AKaeganFatherMimic::AKaeganFatherMimic()
         Piece->SetupAttachment(SceneRoot);
         Piece->SetStaticMesh(KaeganHome::Cube());
         Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        KaeganHome::Tint(Piece, FLinearColor(0.008f, 0.011f, 0.015f));
+        KaeganHome::Tint(Piece, FLinearColor(0.028f, 0.040f, 0.065f));
     }
     Body->SetRelativeLocation(FVector(0.f, 0.f, 112.f));
     Body->SetRelativeScale3D(FVector(0.45f, 0.34f, 2.15f));
@@ -465,6 +473,13 @@ void AKaeganHomeDirector::FinishBoot()
     if (AKaeganHomePlayerController* PC = Cast<AKaeganHomePlayerController>(UGameplayStatics::GetPlayerController(this, 0))) PC->ClearScreen();
     if (AKaeganFirstPersonCharacter* Kaegan = GetKaegan()) Kaegan->SetMovementLocked(false);
     if (AKaeganHomePlayerController* PC = Cast<AKaeganHomePlayerController>(UGameplayStatics::GetPlayerController(this, 0))) PC->ShowNotice(FText::FromString(TEXT("Find the room that remembers you.")), 2.4f);
+    if (FParse::Param(FCommandLine::Get(), TEXT("KaeganCapture")))
+    {
+        GetWorldTimerManager().SetTimer(StartingScreenshotTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+        {
+            RequestValidationScreenshot(TEXT("KaeganHome_StartingRoom"));
+        }), 2.6f, false);
+    }
 }
 
 AStaticMeshActor* AKaeganHomeDirector::MakeBox(const FVector& Location, const FVector& Dimensions, const FLinearColor& Color, const FString& Label, bool bCollision)
@@ -479,10 +494,23 @@ AStaticMeshActor* AKaeganHomeDirector::MakeBox(const FVector& Location, const FV
     Box->SetActorScale3D(Dimensions / 100.f);
     Box->Tags.Add(FName(*Label));
     KaeganHome::Tint(Comp, Color);
+#if !UE_BUILD_SHIPPING
+    if (Label == TEXT("LivingRoom_Floor"))
+    {
+        if (UMaterialInstanceDynamic* Dynamic = Cast<UMaterialInstanceDynamic>(Comp->GetMaterial(0)))
+        {
+            UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: material_tint=%s expected=%s"), *Dynamic->K2_GetVectorParameterValue(TEXT("Color")).ToString(), *Color.ToString());
+        }
+        else
+        {
+            UE_LOG(LogKaeganHome, Error, TEXT("KAEGAN_VISIBILITY_VALIDATION: LivingRoom floor did not retain a dynamic tint material."));
+        }
+    }
+#endif
     return Box;
 }
 
-APointLight* AKaeganHomeDirector::MakeLight(const FVector& Location, const FLinearColor& Color, float Intensity, float Radius, const FString& Label)
+APointLight* AKaeganHomeDirector::MakeLight(const FVector& Location, const FLinearColor& Color, float Intensity, float Radius, const FString& Label, bool bCastShadows)
 {
     APointLight* Light = GetWorld()->SpawnActor<APointLight>(Location, FRotator::ZeroRotator);
     if (!Light) return nullptr;
@@ -492,10 +520,56 @@ APointLight* AKaeganHomeDirector::MakeLight(const FVector& Location, const FLine
     Component->SetLightColor(Color);
     Component->SetIntensity(Intensity);
     Component->SetAttenuationRadius(Radius);
-    Component->SetCastShadows(true);
+    Component->SetCastShadows(bCastShadows);
     Light->Tags.Add(FName(*Label));
     HouseLights.Add(Light);
     return Light;
+}
+
+void AKaeganHomeDirector::ConfigureVisibilityPass()
+{
+    // The house is assembled at runtime, so a runtime volume guarantees that editor viewport
+    // settings and inherited map exposure cannot turn a playable room into a black frame.
+    VisibilityPostProcess = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator);
+    if (VisibilityPostProcess)
+    {
+        VisibilityPostProcess->bUnbound = true;
+        VisibilityPostProcess->Priority = 100.f;
+        VisibilityPostProcess->BlendWeight = 1.f;
+        VisibilityPostProcess->Settings.bOverride_AutoExposureMethod = true;
+        VisibilityPostProcess->Settings.AutoExposureMethod = AEM_Manual;
+        VisibilityPostProcess->Settings.bOverride_AutoExposureBias = true;
+        VisibilityPostProcess->Settings.AutoExposureBias = 1.2f;
+        VisibilityPostProcess->Settings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+        VisibilityPostProcess->Settings.AutoExposureApplyPhysicalCameraExposure = false;
+        VisibilityPostProcess->Settings.bOverride_VignetteIntensity = true;
+        VisibilityPostProcess->Settings.VignetteIntensity = 0.18f;
+        VisibilityPostProcess->Settings.bOverride_AmbientOcclusionIntensity = true;
+        VisibilityPostProcess->Settings.AmbientOcclusionIntensity = 0.55f;
+    }
+
+    // A restrained blue skylight and shadowless moon fill keep wall/floor planes readable.
+    // The practical point lights below still provide the primary contrast and cast shadows.
+    AmbientSkyLight = GetWorld()->SpawnActor<ASkyLight>(FVector(500.f, 0.f, 500.f), FRotator::ZeroRotator);
+    if (USkyLightComponent* Sky = AmbientSkyLight ? AmbientSkyLight->GetLightComponent() : nullptr)
+    {
+        Sky->SetMobility(EComponentMobility::Movable);
+        Sky->SetLightColor(FLinearColor(0.16f, 0.22f, 0.34f));
+        Sky->SetIntensity(0.55f);
+        Sky->bRealTimeCapture = false;
+        Sky->bLowerHemisphereIsBlack = true;
+        Sky->SetLowerHemisphereColor(FLinearColor(0.035f, 0.055f, 0.09f));
+        Sky->RecaptureSky();
+    }
+
+    Moonlight = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-38.f, -118.f, 0.f));
+    if (UDirectionalLightComponent* Directional = Moonlight ? Moonlight->GetComponent() : nullptr)
+    {
+        Directional->SetMobility(EComponentMobility::Movable);
+        Directional->SetLightColor(FLinearColor(0.20f, 0.30f, 0.52f));
+        Directional->SetIntensity(0.45f);
+        Directional->SetCastShadows(false);
+    }
 }
 
 AKaeganDoorActor* AKaeganHomeDirector::MakeDoor(const FVector& Location, float Yaw, const FString& Label, bool bLocked)
@@ -513,10 +587,11 @@ void AKaeganHomeDirector::BuildHome()
 {
     if (bBuilt) return;
     bBuilt = true;
-    const FLinearColor Floor(0.075f, 0.058f, 0.047f);
-    const FLinearColor Wall(0.17f, 0.19f, 0.18f);
-    const FLinearColor Ceiling(0.10f, 0.115f, 0.12f);
-    const FLinearColor Wood(0.13f, 0.075f, 0.045f);
+    // These are dark albedos, but no longer so near-black that a correctly lit room loses its planes.
+    const FLinearColor Floor(0.30f, 0.23f, 0.17f);
+    const FLinearColor Wall(0.36f, 0.40f, 0.42f);
+    const FLinearColor Ceiling(0.24f, 0.28f, 0.34f);
+    const FLinearColor Wood(0.24f, 0.135f, 0.075f);
     auto FloorRoom = [this, &Floor, &Ceiling](FVector Center, FVector Size, const FString& Name)
     {
         MakeBox(Center + FVector(0, 0, -12), FVector(Size.X, Size.Y, 24), Floor, Name + TEXT("_Floor"));
@@ -553,13 +628,13 @@ void AKaeganHomeDirector::BuildHome()
 
     // Furniture silhouettes and domestic landmarks. TEMP assets are intentionally simple and replaceable.
     MakeBox(FVector(240, 250, 55), FVector(350, 150, 90), Wood, TEXT("TEMP_LivingSofa"));
-    MakeBox(FVector(740, 230, 70), FVector(170, 80, 140), FLinearColor(0.025f, 0.03f, 0.04f), TEXT("TEMP_Television"));
+    MakeBox(FVector(740, 230, 70), FVector(170, 80, 140), FLinearColor(0.055f, 0.075f, 0.10f), TEXT("TEMP_Television"));
     MakeBox(FVector(620, -1200, 90), FVector(330, 170, 100), Wood, TEXT("TEMP_KitchenTable"));
     MakeBox(FVector(200, -1580, 110), FVector(850, 80, 170), Wood, TEXT("TEMP_KitchenCounters"));
-    MakeBox(FVector(2850, 980, 55), FVector(360, 220, 90), FLinearColor(0.12f, 0.15f, 0.18f), TEXT("TEMP_KaeganBed"));
+    MakeBox(FVector(2850, 980, 55), FVector(360, 220, 90), FLinearColor(0.17f, 0.21f, 0.27f), TEXT("TEMP_KaeganBed"));
     MakeBox(FVector(2920, 650, 130), FVector(140, 45, 230), Wood, TEXT("TEMP_KaeganDesk"));
     MakeBox(FVector(2070, -900, 95), FVector(120, 80, 170), FLinearColor(0.70f, 0.72f, 0.7f), TEXT("TEMP_BathroomMirror"), false);
-    CorruptionProps.Add(MakeBox(FVector(3575, 120, 110), FVector(100, 280, 220), FLinearColor(0.015f, 0.04f, 0.055f), TEXT("CorruptedFurniture")));
+    CorruptionProps.Add(MakeBox(FVector(3575, 120, 110), FVector(100, 280, 220), FLinearColor(0.045f, 0.075f, 0.10f), TEXT("CorruptedFurniture")));
     CorruptionProps.Last()->SetActorHiddenInGame(true);
 
     MemoryObject = GetWorld()->SpawnActor<AKaeganMemoryObject>(FVector(2920, 590, 180), FRotator(0.f, 90.f, 0.f));
@@ -574,14 +649,24 @@ void AKaeganHomeDirector::BuildHome()
     {
         Television->ConfigureInteraction(FText::FromString(TEXT("[E] Touch the television")));
         Television->GetMesh()->SetRelativeScale3D(FVector(1.25f, 0.18f, 0.8f));
-        KaeganHome::Tint(Television->GetMesh(), FLinearColor(0.03f, 0.07f, 0.08f));
+        KaeganHome::Tint(Television->GetMesh(), FLinearColor(0.06f, 0.11f, 0.13f));
     }
 
-    MakeLight(FVector(450, 0, 260), FLinearColor(0.64f, 0.70f, 0.82f), 850.f, 1050.f, TEXT("LivingMoonlight"));
-    MakeLight(FVector(500, -1180, 260), FLinearColor(0.85f, 0.62f, 0.35f), 650.f, 850.f, TEXT("KitchenWarmth"));
-    MakeLight(FVector(2000, 0, 230), FLinearColor(0.50f, 0.58f, 0.70f), 420.f, 700.f, TEXT("HallLight"));
-    MakeLight(FVector(2750, 900, 250), FLinearColor(0.42f, 0.52f, 0.72f), 460.f, 760.f, TEXT("BedroomNightLight"));
-    MakeLight(FVector(3650, 0, 220), FLinearColor(0.28f, 0.38f, 0.52f), 240.f, 850.f, TEXT("FinalHallLight"));
+    // Shadowed practicals define the horror contrast; broad shadowless fills only reveal navigation.
+    MakeLight(FVector(430, -80, 255), FLinearColor(0.54f, 0.66f, 0.88f), 4200.f, 1550.f, TEXT("Practical_LivingMoonlight"));
+    MakeLight(FVector(500, 100, 175), FLinearColor(0.16f, 0.23f, 0.36f), 2600.f, 1850.f, TEXT("Ambient_LivingFill"), false);
+    MakeLight(FVector(500, -1180, 255), FLinearColor(0.92f, 0.60f, 0.30f), 3200.f, 1250.f, TEXT("Practical_KitchenWarmth"));
+    MakeLight(FVector(450, -1150, 150), FLinearColor(0.18f, 0.24f, 0.34f), 2200.f, 1450.f, TEXT("Ambient_KitchenFill"), false);
+    MakeLight(FVector(1950, 0, 225), FLinearColor(0.43f, 0.55f, 0.78f), 2800.f, 1150.f, TEXT("Practical_MainHall"));
+    MakeLight(FVector(2200, 0, 155), FLinearColor(0.15f, 0.21f, 0.31f), 2300.f, 1250.f, TEXT("Ambient_MainHallFill"), false);
+    MakeLight(FVector(2730, 900, 250), FLinearColor(0.40f, 0.52f, 0.80f), 2600.f, 1150.f, TEXT("Practical_KaeganRoom"));
+    MakeLight(FVector(2780, 850, 150), FLinearColor(0.14f, 0.20f, 0.32f), 2000.f, 1200.f, TEXT("Ambient_KaeganRoomFill"), false);
+    MakeLight(FVector(2050, -850, 235), FLinearColor(0.74f, 0.57f, 0.38f), 1900.f, 900.f, TEXT("Practical_Bathroom"));
+    MakeLight(FVector(3000, -850, 220), FLinearColor(0.32f, 0.42f, 0.66f), 1800.f, 1150.f, TEXT("Practical_ParentRoom"));
+    MakeLight(FVector(3600, 0, 220), FLinearColor(0.30f, 0.42f, 0.68f), 2200.f, 1450.f, TEXT("Practical_FinalHall"));
+    MakeLight(FVector(3850, 0, 145), FLinearColor(0.11f, 0.17f, 0.28f), 2100.f, 1650.f, TEXT("Ambient_FinalHallFill"), false);
+
+    ConfigureVisibilityPass();
 
     Mimic = GetWorld()->SpawnActor<AKaeganFatherMimic>(FVector(4200, 0, 0), FRotator(0.f, 180.f, 0.f));
     if (Mimic) Mimic->SetRevealed(false);
@@ -601,7 +686,8 @@ void AKaeganHomeDirector::AdvanceFromMemory()
     {
         if (UPointLightComponent* Component = Light ? Cast<UPointLightComponent>(Light->GetLightComponent()) : nullptr)
         {
-            Component->SetIntensity(Component->Intensity * 0.58f);
+            const bool bAmbientFill = Light->Tags.Num() > 0 && Light->Tags[0].ToString().StartsWith(TEXT("Ambient_"));
+            Component->SetIntensity(Component->Intensity * (bAmbientFill ? 0.88f : 0.76f));
         }
     }
     SpawnFootstepHint();
@@ -640,6 +726,7 @@ void AKaeganHomeDirector::RunAutomatedValidation()
 {
     const bool bPawnReady = GetKaegan() != nullptr;
     UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VALIDATION: boot state=%d pawn=%s"), static_cast<int32>(State), bPawnReady ? TEXT("ready") : TEXT("missing"));
+    LogVisibilityValidation(TEXT("boot"));
     if (!bPawnReady)
     {
         UE_LOG(LogKaeganHome, Error, TEXT("KAEGAN_VALIDATION: failed before boot because the custom pawn was not possessed."));
@@ -670,7 +757,75 @@ void AKaeganHomeDirector::ValidateMemoryInteraction()
     }
     MemoryObject->Interact(Kaegan);
     UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VALIDATION: memory interaction advanced state=%d"), static_cast<int32>(State));
+    Kaegan->SetActorLocationAndRotation(FVector(1550.f, 0.f, 100.f), FRotator::ZeroRotator, false, nullptr, ETeleportType::TeleportPhysics);
+    if (FParse::Param(FCommandLine::Get(), TEXT("KaeganCapture")))
+    {
+        GetWorldTimerManager().SetTimer(HallwayScreenshotTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+        {
+            RequestValidationScreenshot(TEXT("KaeganHome_MainHall_AfterMemory"));
+        }), 2.5f, false);
+    }
     GetWorldTimerManager().SetTimer(ValidationTimer, this, &AKaeganHomeDirector::ValidateHallwayCorruption, 2.8f, false);
+}
+
+void AKaeganHomeDirector::RequestValidationScreenshot(const FString& Name) const
+{
+#if !UE_BUILD_SHIPPING
+    const FString Path = FPaths::ProjectSavedDir() / TEXT("Screenshots") / Name;
+    FScreenshotRequest::RequestScreenshot(Path, false, true);
+    UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: requested screenshot %s"), *Path);
+#endif
+}
+
+void AKaeganHomeDirector::LogVisibilityValidation(const TCHAR* Phase) const
+{
+#if !UE_BUILD_SHIPPING
+    const AKaeganFirstPersonCharacter* Kaegan = GetKaegan();
+    const FVector SpawnLocation = Kaegan ? Kaegan->GetActorLocation() : FVector::ZeroVector;
+    UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: phase=%s player_spawn=%s"), Phase, *SpawnLocation.ToString());
+
+    int32 ActiveLights = 0;
+    for (const APointLight* Light : HouseLights)
+    {
+        const UPointLightComponent* Component = Light ? Cast<UPointLightComponent>(Light->GetLightComponent()) : nullptr;
+        if (!Component) continue;
+        const bool bActive = Component->IsVisible() && Component->Intensity > 0.f;
+        ActiveLights += bActive ? 1 : 0;
+        const FString Label = Light->Tags.Num() > 0 ? Light->Tags[0].ToString() : Light->GetName();
+        UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: light=%s intensity=%.0f radius=%.0f shadows=%s active=%s"), *Label, Component->Intensity, Component->AttenuationRadius, Component->CastShadows ? TEXT("true") : TEXT("false"), bActive ? TEXT("true") : TEXT("false"));
+    }
+    UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: active_point_lights=%d ambient_sky=%s moon_fill=%s"), ActiveLights, AmbientSkyLight ? TEXT("present") : TEXT("missing"), Moonlight ? TEXT("present") : TEXT("missing"));
+
+    if (VisibilityPostProcess)
+    {
+        UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: exposure=manual bias=%.2f physical_camera=%s volume_unbound=%s"), VisibilityPostProcess->Settings.AutoExposureBias, VisibilityPostProcess->Settings.AutoExposureApplyPhysicalCameraExposure ? TEXT("true") : TEXT("false"), VisibilityPostProcess->bUnbound ? TEXT("true") : TEXT("false"));
+    }
+    else
+    {
+        UE_LOG(LogKaeganHome, Error, TEXT("KAEGAN_VISIBILITY_VALIDATION: exposure volume missing."));
+    }
+
+    if (Kaegan)
+    {
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(KaeganSpawnClearance), false, Kaegan);
+        const bool bSpawnBlocked = GetWorld()->OverlapBlockingTestByChannel(SpawnLocation, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(34.f, 88.f), Params);
+        const AActor* NearestBlocker = nullptr;
+        float NearestDistance = TNumericLimits<float>::Max();
+        for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+        {
+            UStaticMeshComponent* Mesh = It->GetStaticMeshComponent();
+            if (!Mesh || Mesh->GetCollisionEnabled() == ECollisionEnabled::NoCollision) continue;
+            const float Distance = FMath::Sqrt(It->GetComponentsBoundingBox(true).ComputeSquaredDistanceToPoint(SpawnLocation));
+            if (Distance < NearestDistance)
+            {
+                NearestDistance = Distance;
+                NearestBlocker = *It;
+            }
+        }
+        const FString NearestName = NearestBlocker && NearestBlocker->Tags.Num() > 0 ? NearestBlocker->Tags[0].ToString() : (NearestBlocker ? NearestBlocker->GetName() : TEXT("none"));
+        UE_LOG(LogKaeganHome, Log, TEXT("KAEGAN_VISIBILITY_VALIDATION: spawn_blocked=%s nearest_blocking_geometry=%s distance_cm=%.1f"), bSpawnBlocked ? TEXT("true") : TEXT("false"), *NearestName, NearestDistance);
+    }
+#endif
 }
 
 void AKaeganHomeDirector::ValidateHallwayCorruption()
@@ -777,18 +932,20 @@ AKaeganHomeGameMode::AKaeganHomeGameMode()
 void AKaeganHomeGameMode::StartPlay()
 {
     Super::StartPlay();
+    // Deliberately offset from the sofa/television cluster, with a clear sightline to the hall.
+    const FVector SafeEntrySpawn(0.f, -300.f, 100.f);
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
     {
         AKaeganFirstPersonCharacter* Pawn = Cast<AKaeganFirstPersonCharacter>(PC->GetPawn());
         if (!Pawn)
         {
-            Pawn = GetWorld()->SpawnActor<AKaeganFirstPersonCharacter>(FVector(0.f, 0.f, 100.f), FRotator::ZeroRotator);
+            Pawn = GetWorld()->SpawnActor<AKaeganFirstPersonCharacter>(SafeEntrySpawn, FRotator::ZeroRotator);
             if (Pawn) PC->Possess(Pawn);
         }
         if (Pawn)
         {
-            Pawn->SetActorLocationAndRotation(FVector(0.f, 0.f, 100.f), FRotator::ZeroRotator, false, nullptr, ETeleportType::TeleportPhysics);
-            UE_LOG(LogKaeganHome, Log, TEXT("LEVEL 01 HOME: custom pawn placed at safe entry spawn."));
+            Pawn->SetActorLocationAndRotation(SafeEntrySpawn, FRotator::ZeroRotator, false, nullptr, ETeleportType::TeleportPhysics);
+            UE_LOG(LogKaeganHome, Log, TEXT("LEVEL 01 HOME: custom pawn placed at safe entry spawn %s."), *SafeEntrySpawn.ToString());
         }
     }
     bool bDirectorExists = false;

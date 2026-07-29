@@ -54,6 +54,15 @@ Temporary runtime assets are deliberately tagged and easy to replace:
 
 To replace the drawing or photos, import approved images under `Content/Kaegan/Temporary` and assign their material to the corresponding director-created component, or replace `TEMP_KaeganDrawing` with a placed Blueprint that subclasses `AKaeganMemoryObject`. To replace the mimic/crutches, make a Blueprint child of `AKaeganFatherMimic`, replace its four mesh components, then change the director's spawned class. Replace audio by adding `USoundBase` references in `SpawnFootstepHint`, door interaction, memory interaction, and `BeginFinalSequence`; attenuation should remain positional and local to the named house points.
 
+### Visibility and lighting pass (2026-07-29)
+
+- Raised the runtime floor, wall, ceiling, wood, furniture, and corruption albedos from near-black to dark readable values. The `BasicShapeMaterial` dynamic `Color` parameter is now explicitly reassigned to each runtime mesh; development validation logs the applied living-room floor tint.
+- Added a runtime unbound post-process volume that uses fixed manual exposure (`+1.2` bias, physical-camera exposure disabled), restrained vignette, and ambient occlusion. This prevents editor or inherited map exposure from collapsing the game view to black.
+- Added a movable cold-blue Skylight and a non-shadowing directional moon fill. The house also now has 12 zone lights: shadowed cool/warm practicals for contrast, plus low-level shadowless ambient fills in the living room, kitchen, main hall, Kaegan's room, and final hall. Practical intensity/radius were increased to cover their full rooms without using white or red lighting.
+- After the drawing interaction, practicals dim only to 76% and ambient fills to 88%, preserving the frightening transition while keeping the critical route readable. The mimic remains blue-black, with a readable human outline and separate crutch silhouettes.
+- The enforced runtime spawn moved from `(0, 0, 100)` to `(0, -300, 100)`: a clear living-room lane aimed toward the route, away from the sofa/television cluster. Validation confirms the capsule has no blocking overlap; the nearest blocking geometry is the floor, 100 cm from the pawn origin.
+- Development-only `-KaeganValidation` logging now reports the actual spawn, every light's intensity/radius/shadow state, active light count, ambient sources, fixed exposure state, dynamic material result, and nearest spawn obstruction. Add `-KaeganCapture` to request starting-room and post-memory hallway screenshots.
+
 ## Controls
 
 - `WASD` - move
@@ -89,7 +98,7 @@ Run from `unreal\KaeganEXE`:
 $engineDotnet = 'C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\ThirdParty\DotNet\8.0.412\win-x64\dotnet.exe'
 & $engineDotnet 'C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll' -projectfiles -project="$PWD\KaeganEXE.uproject" -game -engine
 & $engineDotnet 'C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll' KaeganEXEEditor Win64 Development -Project="$PWD\KaeganEXE.uproject" -WaitMutex -NoHotReload
-& 'C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' "$PWD\KaeganEXE.uproject" /Game/Kaegan/Maps/L_Home_01 -game -NullRHI -NoSound -unattended -NoSplash -KaeganValidation
+& 'C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' "$PWD\KaeganEXE.uproject" /Game/Kaegan/Maps/L_Home_01 -game -windowed -ResX=1280 -ResY=720 -KaeganValidation -KaeganCapture -NoSplash
 ```
 
 Results on 2026-07-29:
@@ -97,13 +106,14 @@ Results on 2026-07-29:
 - Project-file generation: passed.
 - Unreal Header Tool: passed with warnings-as-errors.
 - `KaeganEXEEditor Win64 Development`: passed. Build log: `unreal/KaeganEXE/Saved/Logs/CodexBuild.log`.
-- Command-line map load: passed; `/Game/Kaegan/Maps/L_Home_01` loaded with `KaeganHomeGameMode` and the custom pawn at the safe entry spawn. Runtime log: `unreal/KaeganEXE/Saved/Logs/CodexRuntimeValidation.log`.
+- Rendered command-line map load: passed; `/Game/Kaegan/Maps/L_Home_01` loaded with `KaeganHomeGameMode` and the custom pawn at `(0, -300, 100)`. The visibility validation reported 12 active point lights, movable ambient sky/moon fills, manual exposure at `+1.20`, correct dynamic material tint, and `spawn_blocked=false`.
 - Automated game-world validation: passed boot, possession, pause/resume screen lifecycle, memory interaction, hallway corruption, mimic staging, final movement lock, and completion screen/mouse release. It uses the opt-in `-KaeganValidation` flag and exits after success.
-- Full Unreal Editor launch: passed. UE 5.7 opened the project, loaded `L_Home_01`, and remained responsive before a normal close request.
+- Visual validation: passed. A clean rendered capture of the untouched start position shows a readable floor, wall edges, door/hall opening, television/sofa silhouettes, and safe sightline. The rendered post-memory hallway capture shows its floor and wall planes, a readable threatening human/crutch silhouette, and no black-screen failure. Captures: `unreal/KaeganEXE/Saved/Screenshots/KaeganHome_StartingRoom00001.png` and `unreal/KaeganEXE/Saved/Screenshots/KaeganHome_MainHall_AfterMemory00001.png`.
+- Full Unreal Editor launch: passed. UE 5.7 opened the project and loaded `L_Home_01` after this lighting change.
 
 Repairs made during validation: installed the missing .NET Framework SDK; fixed UE 5.7 point-light API usage and warnings-as-errors member shadowing; ordered runtime mesh mobility before mesh assignment; added a saved PlayerStart plus enforced safe spawn; and prevented stale notice timers from removing a later completion screen.
 
-The editor window and direct keyboard/mouse playthrough were not visually observed by automation. A short human visual playthrough is still recommended for lighting, door feel, silhouette readability, and final UI-button clicking. The headless run intentionally uses `-NullRHI` and `-NoSound`, so it does not validate final visual/audible polish.
+The rendered command-line run and saved screenshots visually confirm the required navigation readability. A short human PIE playthrough remains useful for subjective door feel, final UI-button clicking, and audio polish.
 
 ## Exact launch instructions
 
